@@ -164,8 +164,8 @@
                     <!-- PM2.5图片 -->
                     <ImageView
                         android:id="@+id/pm2_5_img"
-                        android:layout_width="60dp"
-                        android:layout_height="60dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
                         android:layout_marginStart="5.0dp"
                         android:src="@drawable/biz_plugin_weather_0_50" />
                 </LinearLayout>
