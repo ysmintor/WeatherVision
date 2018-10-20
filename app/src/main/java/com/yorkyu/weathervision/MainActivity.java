@@ -6,6 +6,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.yorkyu.weathervision.util.NetUtil;
@@ -26,6 +27,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private static final String TAG = "myWeather";
     private ImageView mUpdateBtn;
+    private TextView cityTv, timeTv, humidtyTv, weekTv, pmDataTv, pmQualityTv, temperatureTv, climateTv, windTv, city_name_Tv;
+    private ImageView weatherImag, pmImg;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +38,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         mUpdateBtn = findViewById(R.id.title_update_btn);
         mUpdateBtn.setOnClickListener(this);
+
+        intiView();
+
+    }
+
+    private void intiView() {
+        city_name_Tv =  findViewById(R.id.title_city_name);
+        cityTv = findViewById(R.id.city);
+        timeTv = findViewById(R.id.time);
+        humidtyTv = findViewById(R.id.humidity);
+        weekTv = findViewById(R.id.week_today);
+        pmDataTv = findViewById(R.id.pm_data);
+        pmQualityTv = findViewById(R.id.pm2_5_quality);
+        temperatureTv = findViewById(R.id.temperature);
+        climateTv = findViewById(R.id.climate);
+        windTv = findViewById(R.id.wind);
+        weatherImag = findViewById(R.id.weather_img);
+
+        city_name_Tv.setText("N/A");
+        cityTv.setText("N/A");
+        timeTv.setText("N/A");
+        humidtyTv.setText("N/A");
+        pmDataTv.setText("N/A");
+        pmQualityTv.setText("N/A");
+        weekTv.setText("N/A");
+        temperatureTv.setText("N/A");
+        climateTv.setText("N/A");
+        windTv.setText("N/A");
 
     }
 
