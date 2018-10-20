@@ -2,6 +2,8 @@ package com.yorkyu.weathervision;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -9,6 +11,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.yorkyu.weathervision.model.TodayWeather;
 import com.yorkyu.weathervision.util.NetUtil;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -25,9 +28,10 @@ import java.net.URL;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
+    private static final int UPDATE_TODAY_WEATHER = 1;
     private static final String TAG = "myWeather";
     private ImageView mUpdateBtn;
-    private TextView cityTv, timeTv, humidtyTv, weekTv, pmDataTv, pmQualityTv, temperatureTv, climateTv, windTv, city_name_Tv;
+    private TextView cityTv, timeTv, humidityTv, weekTv, pmDataTv, pmQualityTv, temperatureTv, climateTv, windTv, city_name_Tv;
     private ImageView weatherImag, pmImg;
 
     @Override
@@ -44,10 +48,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void intiView() {
-        city_name_Tv =  findViewById(R.id.title_city_name);
+        city_name_Tv = findViewById(R.id.title_city_name);
         cityTv = findViewById(R.id.city);
         timeTv = findViewById(R.id.time);
-        humidtyTv = findViewById(R.id.humidity);
+        humidityTv = findViewById(R.id.humidity);
         weekTv = findViewById(R.id.week_today);
         pmDataTv = findViewById(R.id.pm_data);
         pmQualityTv = findViewById(R.id.pm2_5_quality);
@@ -59,7 +63,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         city_name_Tv.setText("N/A");
         cityTv.setText("N/A");
         timeTv.setText("N/A");
-        humidtyTv.setText("N/A");
+        humidityTv.setText("N/A");
         pmDataTv.setText("N/A");
         pmQualityTv.setText("N/A");
         weekTv.setText("N/A");
@@ -69,8 +73,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
-    @Override
 
+    private Handler mHandler = new Handler() {
+        public void handleMessage(android.os.Message msg) {
+            switch (msg.what) {
+                case UPDATE_TODAY_WEATHER:
+                    updateTodayWeather((TodayWeather) msg.obj);
+                    break;
+                default:
+                    break;
+            }
+        }
+    };
+
+
+    @Override
     public void onClick(View v) {
         if (v.getId() == R.id.title_update_btn) {
             SharedPreferences sharedPreferences = getSharedPreferences("config", MODE_PRIVATE);
@@ -99,6 +116,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void run() {
                 HttpURLConnection con = null;
+                TodayWeather todayWeather = null;
                 try {
                     URL url = new URL(address);
                     con = (HttpURLConnection) url.openConnection();
@@ -114,7 +132,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                     String responseStr = response.toString();
 //                    Log.d(TAG, responseStr);
-                    parseXML(responseStr);
+                    todayWeather = parseXML(responseStr);
+                    if (todayWeather != null) {
+                        Log.d(TAG, todayWeather.toString());
+
+                        Message msg =new Message();
+                        msg.what = UPDATE_TODAY_WEATHER;
+                        msg.obj=todayWeather;
+                        mHandler.sendMessage(msg);
+
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
@@ -126,7 +153,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }).start();
     }
 
-    private void parseXML(String xmldata) {
+    private TodayWeather parseXML(String xmldata) {
+        TodayWeather todayWeather = null;
         int fengxiangCount = 0, fengliCount = 0, dateCount = 0, highCount = 0, lowCount = 0, typeCount = 0;
         try {
             XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
@@ -136,52 +164,55 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Log.d(TAG, "parseXML");
             while (eventType != XmlPullParser.END_DOCUMENT) {
                 switch (eventType) {
-                    // 判断当前事件是滞凛文档开始事件
+                    // 判断当前事件是否为文档开始事件
                     case XmlPullParser.START_DOCUMENT:
                         break;
-                    // 判断当前事件是滞曾标签元素开始事件
+                    // 判断当前事件是否为标签元素开始事件
                     case XmlPullParser.START_TAG:
+                        if (xmlPullParser.getName().equals("resp")) {
+                            todayWeather = new TodayWeather();
+                        }
                         if (xmlPullParser.getName().equals("city")) {
                             eventType = xmlPullParser.next();
-                            Log.d(TAG, "city: " + xmlPullParser.getText());
+                            todayWeather.setCity(xmlPullParser.getText());
                         } else if (xmlPullParser.getName().equals("updatetime")) {
                             eventType = xmlPullParser.next();
-                            Log.d(TAG, "updatetime: " + xmlPullParser.getText());
+                            todayWeather.setUpdatetime(xmlPullParser.getText());
                         } else if (xmlPullParser.getName().equals("shidu")) {
                             eventType = xmlPullParser.next();
-                            Log.d(TAG, "shidu: " + xmlPullParser.getText());
+                            todayWeather.setShidu(xmlPullParser.getText());
                         } else if (xmlPullParser.getName().equals("wendu")) {
                             eventType = xmlPullParser.next();
                             Log.d(TAG, "wendu: " + xmlPullParser.getText());
                         } else if (xmlPullParser.getName().equals("pm25")) {
                             eventType = xmlPullParser.next();
-                            Log.d(TAG, "pm25: " + xmlPullParser.getText());
+                            todayWeather.setPm25(xmlPullParser.getText());
                         } else if (xmlPullParser.getName().equals("quality")) {
                             eventType = xmlPullParser.next();
-                            Log.d(TAG, "quality: " + xmlPullParser.getText());
+                            todayWeather.setQuality(xmlPullParser.getText());
                         } else if (xmlPullParser.getName().equals("fengxiang") && fengxiangCount == 0) {
                             eventType = xmlPullParser.next();
-                            Log.d(TAG, "fengxiang: " + xmlPullParser.getText());
+                            todayWeather.setFengxiang(xmlPullParser.getText());
                             fengxiangCount++;
                         } else if ((xmlPullParser.getName().equals("fengli")) && fengliCount == 0) {
                             eventType = xmlPullParser.next();
-                            Log.d(TAG, "fengli: " + xmlPullParser.getText());
+                            todayWeather.setFengli(xmlPullParser.getText());
                             fengliCount++;
                         } else if (xmlPullParser.getName().equals("date") && dateCount == 0) {
                             eventType = xmlPullParser.next();
-                            Log.d(TAG, "date: " + xmlPullParser.getText());
+                            todayWeather.setDate(xmlPullParser.getText());
                             dateCount++;
                         } else if (xmlPullParser.getName().equals("high") && highCount == 0) {
                             eventType = xmlPullParser.next();
-                            Log.d(TAG, "high: " + xmlPullParser.getText());
+                            todayWeather.setHigh(xmlPullParser.getText());
                             highCount++;
                         } else if (xmlPullParser.getName().equals("low") && lowCount == 0) {
                             eventType = xmlPullParser.next();
-                            Log.d(TAG, "low: " + xmlPullParser.getText());
+                            todayWeather.setLow(xmlPullParser.getText());
                             lowCount++;
                         } else if (xmlPullParser.getName().equals("type") && typeCount == 0) {
                             eventType = xmlPullParser.next();
-                            Log.d(TAG, "type: " + xmlPullParser.getText());
+                            todayWeather.setType(xmlPullParser.getText());
                             typeCount++;
                         }
                         break;
@@ -197,6 +228,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } catch (IOException e) {
             e.printStackTrace();
         }
-
+        return todayWeather;
     }
+
+
+    void updateTodayWeather(TodayWeather todayWeather) {
+        city_name_Tv.setText(todayWeather.getCity() + "天气");
+        cityTv.setText(todayWeather.getCity());
+        timeTv.setText(todayWeather.getUpdatetime() + "发布");
+        humidityTv.setText("湿度:" + todayWeather.getShidu());
+        pmDataTv.setText(todayWeather.getPm25());
+        pmQualityTv.setText(todayWeather.getQuality());
+        weekTv.setText(todayWeather.getDate());
+        temperatureTv.setText(todayWeather.getHigh() + "~" + todayWeather.getLow());
+        climateTv.setText(todayWeather.getType());
+        windTv.setText("风力:" + todayWeather.getFengli());
+        Toast.makeText(MainActivity.this, "更新成功!", Toast.LENGTH_SHORT).show();
+    }
+
 }
