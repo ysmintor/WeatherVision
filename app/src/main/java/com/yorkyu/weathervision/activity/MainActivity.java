@@ -1,5 +1,6 @@
-package com.yorkyu.weathervision;
+package com.yorkyu.weathervision.activity;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
@@ -11,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.yorkyu.weathervision.R;
 import com.yorkyu.weathervision.model.TodayWeather;
 import com.yorkyu.weathervision.util.NetUtil;
 
@@ -31,6 +33,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static final int UPDATE_TODAY_WEATHER = 1;
     private static final String TAG = "myWeather";
     private ImageView mUpdateBtn;
+    private ImageView mCitySelect;
     private TextView cityTv, timeTv, humidityTv, weekTv, pmDataTv, pmQualityTv, temperatureTv, climateTv, windTv, city_name_Tv;
     private ImageView weatherImag, pmImg;
 
@@ -43,6 +46,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mUpdateBtn = findViewById(R.id.title_update_btn);
         mUpdateBtn.setOnClickListener(this);
 
+        mCitySelect = findViewById(R.id.title_city_manager);
+        mCitySelect.setOnClickListener(this);
         intiView();
 
     }
@@ -89,6 +94,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
+        if (v.getId() == R.id.title_city_manager) {
+            Intent i = new Intent(this, SelectActivity.class);
+            startActivityForResult(i,1);
+        }
         if (v.getId() == R.id.title_update_btn) {
             SharedPreferences sharedPreferences = getSharedPreferences("config", MODE_PRIVATE);
             String cityCode = sharedPreferences.getString("main_city_code", "101010100");
@@ -98,6 +107,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if (NetUtil.getNetworkState(this) != NetUtil.NETWORN_NONE) {
                 Log.d("myWeather", "网络OK");
                 queryWeatherCode(cityCode);
+            } else {
+                Log.d("myWeather", "网络挂了");
+                Toast.makeText(MainActivity.this, "网络挂了!", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == 1 && resultCode == RESULT_OK) {
+            String newCityCode = data.getStringExtra("cityCode");
+            Log.d("myWeather", "选择的城市代码为" + newCityCode);
+
+            if (NetUtil.getNetworkState(this) != NetUtil.NETWORN_NONE) {
+                Log.d("myWeather", "网络OK");
+                queryWeatherCode(newCityCode);
             } else {
                 Log.d("myWeather", "网络挂了");
                 Toast.makeText(MainActivity.this, "网络挂了!", Toast.LENGTH_LONG).show();
@@ -136,9 +161,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     if (todayWeather != null) {
                         Log.d(TAG, todayWeather.toString());
 
-                        Message msg =new Message();
+                        Message msg = new Message();
                         msg.what = UPDATE_TODAY_WEATHER;
-                        msg.obj=todayWeather;
+                        msg.obj = todayWeather;
                         mHandler.sendMessage(msg);
 
                     }
