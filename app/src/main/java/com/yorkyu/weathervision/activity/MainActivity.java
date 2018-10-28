@@ -42,16 +42,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
+        // 绑定控件
         mUpdateBtn = findViewById(R.id.title_update_btn);
+        // 设置监听器
         mUpdateBtn.setOnClickListener(this);
-
+        // 绑定控件
         mCitySelect = findViewById(R.id.title_city_manager);
+        // 设置监听器
         mCitySelect.setOnClickListener(this);
         intiView();
 
     }
 
+    /**
+     * 初始化主界面元素，先绑定 View，再设置内容
+     */
     private void intiView() {
         city_name_Tv = findViewById(R.id.title_city_name);
         cityTv = findViewById(R.id.city);
@@ -79,6 +84,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
+    /**
+     * Handler 用于异步处理，将结果交线主线程即 UI 线程更新界面数据
+     */
     private Handler mHandler = new Handler() {
         public void handleMessage(android.os.Message msg) {
             switch (msg.what) {
@@ -95,15 +103,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.title_city_manager) {
+            // 通过 Intent 跳转到城市选择界面
             Intent i = new Intent(this, SelectActivity.class);
             startActivityForResult(i,1);
         }
         if (v.getId() == R.id.title_update_btn) {
+            // 通过 SharedPreferences 存储 city code
             SharedPreferences sharedPreferences = getSharedPreferences("config", MODE_PRIVATE);
             String cityCode = sharedPreferences.getString("main_city_code", "101010100");
             Log.d("myWeahter city code", cityCode);
 
 
+            // 检测网络连接
             if (NetUtil.getNetworkState(this) != NetUtil.NETWORN_NONE) {
                 Log.d("myWeather", "网络OK");
                 queryWeatherCode(cityCode);
@@ -114,7 +125,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-
+    /**
+     *  接收其它界面返回后的值来做判断
+     * @param requestCode
+     * @param resultCode
+     * @param data
+     */
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == 1 && resultCode == RESULT_OK) {
             String newCityCode = data.getStringExtra("cityCode");
@@ -137,17 +153,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void queryWeatherCode(String cityCode) {
         final String address = "http://wthrcdn.etouch.cn/WeatherApi?citykey=" + cityCode;
         Log.d(TAG, address);
+        // 在非主线程进行网络请求，否则可能会产生 ANR
         new Thread(new Runnable() {
             @Override
             public void run() {
+                // 定义 URL connection
                 HttpURLConnection con = null;
                 TodayWeather todayWeather = null;
                 try {
                     URL url = new URL(address);
-                    con = (HttpURLConnection) url.openConnection();
-                    con.setRequestMethod("GET");
-                    con.setConnectTimeout(8000);
-                    con.setReadTimeout(8000);
+                    con = (HttpURLConnection) url.openConnection();     // 打开http 连接
+                    con.setRequestMethod("GET");                        // 设置请求方式为 GET
+                    con.setConnectTimeout(8000);                        // 设置连接超时时间为8000毫秒
+                    con.setReadTimeout(8000);                           // 设置
                     InputStream in = con.getInputStream();
                     BufferedReader reader = new BufferedReader(new InputStreamReader(in));
                     StringBuilder response = new StringBuilder();
