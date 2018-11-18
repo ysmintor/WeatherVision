@@ -165,18 +165,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     con = (HttpURLConnection) url.openConnection();     // 打开http 连接
                     con.setRequestMethod("GET");                        // 设置请求方式为 GET
                     con.setConnectTimeout(8000);                        // 设置连接超时时间为8000毫秒
-                    con.setReadTimeout(8000);                           // 设置
-                    InputStream in = con.getInputStream();
+                    con.setReadTimeout(8000);                           // 设置从连接读取超时时间为8000毫秒
+                    InputStream in = con.getInputStream();              // 从连接中获取输入流
                     BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-                    StringBuilder response = new StringBuilder();
+                    StringBuilder response = new StringBuilder();       // 初始化拼接字符对象
                     String str;
                     while ((str = reader.readLine()) != null) {
-                        response.append(str);
+                        response.append(str);                           // 从流中读取每一行并加入到 response 中
                     }
                     String responseStr = response.toString();
 //                    Log.d(TAG, responseStr);
-                    todayWeather = parseXML(responseStr);
-                    if (todayWeather != null) {
+                    todayWeather = parseXML(responseStr);               // 从获取的数据中解析需要的内容到 TodayWeather 实体中
+                    if (todayWeather != null) {                         // 获取的数据不为空，则将解析后的数据发送到主线程进行显示
                         Log.d(TAG, todayWeather.toString());
 
                         Message msg = new Message();
@@ -212,9 +212,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         break;
                     // 判断当前事件是否为标签元素开始事件
                     case XmlPullParser.START_TAG:
+                        // 有resp则初始化新的 TodayWeather 实体
                         if (xmlPullParser.getName().equals("resp")) {
                             todayWeather = new TodayWeather();
                         }
+                        // 依据不同的标签开始点解析到对应的字段
                         if (xmlPullParser.getName().equals("city")) {
                             eventType = xmlPullParser.next();
                             todayWeather.setCity(xmlPullParser.getText());
@@ -275,6 +277,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
+    /**
+     * 更新天气信息到主界面中
+     * @param todayWeather 天气信息
+     */
     void updateTodayWeather(TodayWeather todayWeather) {
         city_name_Tv.setText(todayWeather.getCity() + "天气");
         cityTv.setText(todayWeather.getCity());

@@ -8,6 +8,7 @@ public class NetUtil {
     public static final int NETWORN_NONE = 0;
     public static final int NETWORN_WIFI = 1;
     public static final int NETWORN_MOBILE = 2;
+
     public static int getNetworkState(Context context) {
         ConnectivityManager connManager = (ConnectivityManager)
                 context
