@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private ImageView mUpdateBtn;
     private ImageView mCitySelect;
     private TextView cityTv, timeTv, humidityTv, weekTv, pmDataTv, pmQualityTv, temperatureTv, climateTv, windTv, city_name_Tv;
-    private ImageView weatherImag, pmImg;
+    private ImageView weatherImg, pmImg;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,7 +68,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         temperatureTv = findViewById(R.id.temperature);
         climateTv = findViewById(R.id.climate);
         windTv = findViewById(R.id.wind);
-        weatherImag = findViewById(R.id.weather_img);
+        weatherImg = findViewById(R.id.weather_img);
+        pmImg = findViewById(R.id.pm2_5_img);
 
         city_name_Tv.setText("N/A");
         cityTv.setText("N/A");
@@ -292,7 +293,70 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         temperatureTv.setText(todayWeather.getHigh() + "~" + todayWeather.getLow());
         climateTv.setText(todayWeather.getType());
         windTv.setText("风力:" + todayWeather.getFengli());
-        Toast.makeText(MainActivity.this, "更新成功!", Toast.LENGTH_SHORT).show();
+
+        // 依据解析的 PM2.5值更新相应的人物头像
+        if (todayWeather.getPm25() != null) {
+            int pm25 = Integer.valueOf(todayWeather.getPm25());
+            if (pm25 <= 50) {
+                pmImg.setImageResource(R.drawable.biz_plugin_weather_0_50);
+            } else if (pm25 <= 100) {
+                pmImg.setImageResource(R.drawable.biz_plugin_weather_51_100);
+            } else if (pm25 <= 150) {
+                pmImg.setImageResource(R.drawable.biz_plugin_weather_101_150);
+            } else if (pm25 <= 200) {
+                pmImg.setImageResource(R.drawable.biz_plugin_weather_151_200);
+            } else if (pm25 <= 300) {
+                pmImg.setImageResource(R.drawable.biz_plugin_weather_201_300);
+            } else {
+                pmImg.setImageResource(R.drawable.biz_plugin_weather_greater_300);
+            }
+        }
+
+        //根据解析的天气类型更新界面的天气图案
+        String climate = todayWeather.getType();
+        if (climate.equals("暴雪")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_baoxue);
+        } else if (climate.equals("暴雨")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_baoyu);
+        } else if (climate.equals("大暴雨")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_dabaoyu);
+        } else if (climate.equals("大雪")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_daxue);
+        } else if (climate.equals("大雨")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_dayu);
+        } else if (climate.equals("多云")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_duoyun);
+        } else if (climate.equals("雷阵雨")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_leizhenyu);
+        } else if (climate.equals("雷阵雨冰雹")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_leizhenyubingbao);
+        } else if (climate.equals("晴")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_qing);
+        } else if (climate.equals("沙尘暴")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_shachenbao);
+        } else if (climate.equals("特大暴雨")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_tedabaoyu);
+        } else if (climate.equals("雾")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_wu);
+        } else if (climate.equals("小雪")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_xiaoxue);
+        } else if (climate.equals("小雨")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_xiaoyu);
+        } else if (climate.equals("阴")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_yin);
+        } else if (climate.equals("雨夹雪")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_yujiaxue);
+        } else if (climate.equals("阵雨")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_zhenyu);
+        } else if (climate.equals("阵雪")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_zhenxue);
+        } else if (climate.equals("中雪")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_zhongxue);
+        } else if (climate.equals("中雨")) {
+            weatherImg.setImageResource(R.drawable.biz_plugin_weather_zhongyu);
+        }
+        Toast.makeText(MainActivity.this, "更新成功!", Toast.LENGTH_LONG).show();
+
     }
 
 }
