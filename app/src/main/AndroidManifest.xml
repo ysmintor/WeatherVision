@@ -17,7 +17,7 @@
         tools:ignore="GoogleAppIndexingWarning">
         <activity android:name=".activity.MainActivity"/>
         <activity android:name=".activity.SelectActivity" />
-
+        <activity android:name=".activity.IntroGuideActivity"/>
         <activity android:name=".activity.SplashScreenActivity" android:theme="@style/SplashScreenTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

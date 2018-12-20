@@ -8,6 +8,8 @@ import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.RotateAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,7 +38,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private ImageView mCitySelect;
     private TextView cityTv, timeTv, humidityTv, weekTv, pmDataTv, pmQualityTv, temperatureTv, climateTv, windTv, city_name_Tv;
     private ImageView weatherImg, pmImg;
-
+    private RotateAnimation rotateAnimation;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,6 +53,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // 设置监听器
         mCitySelect.setOnClickListener(this);
         intiView();
+
+        // 设置一个放置动画用于刷新按钮
+        rotateAnimation = new RotateAnimation(
+                0, 360,
+                Animation.RELATIVE_TO_SELF, 0.5f,
+                Animation.RELATIVE_TO_SELF, 0.5f
+        );
+        rotateAnimation.setDuration(500);
+        rotateAnimation.setRepeatCount(Animation.INFINITE);
 
     }
 
@@ -101,6 +112,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     };
 
 
+
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.title_city_manager) {
@@ -118,6 +130,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             // 检测网络连接
             if (NetUtil.getNetworkState(this) != NetUtil.NETWORN_NONE) {
                 Log.d("myWeather", "网络OK");
+
+                mUpdateBtn.startAnimation(rotateAnimation);
+
                 queryWeatherCode(cityCode);
             } else {
                 Log.d("myWeather", "网络挂了");
@@ -192,6 +207,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     if (con != null) {
                         con.disconnect();
                     }
+                    mUpdateBtn.clearAnimation();
                 }
             }
         }).start();
