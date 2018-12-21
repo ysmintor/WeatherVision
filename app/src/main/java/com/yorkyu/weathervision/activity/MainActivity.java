@@ -81,6 +81,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         rotateAnimation.setRepeatCount(Animation.INFINITE);
 
     }
+
     private void initLocation() {
         LocationClientOption option = new LocationClientOption();
         //就是这个方法设置为 true，才能获取当前的位置信息
@@ -240,16 +241,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                     String responseStr = response.toString();
 //                    Log.d(TAG, responseStr);
-                    todayWeather = parseXML(responseStr);               // 从获取的数据中解析需要的内容到 TodayWeather 实体中
-                    if (todayWeather != null) {                         // 获取的数据不为空，则将解析后的数据发送到主线程进行显示
-                        Log.d(TAG, todayWeather.toString());
+                    if (!responseStr.contains("<error>")) {                 // 处理没有对应的city code 返回结果的情形
+                        todayWeather = parseXML(responseStr);               // 从获取的数据中解析需要的内容到 TodayWeather 实体中
+                        if (todayWeather != null) {                         // 获取的数据不为空，则将解析后的数据发送到主线程进行显示
+                            Log.d(TAG, todayWeather.toString());
 
-                        Message msg = new Message();
-                        msg.what = UPDATE_TODAY_WEATHER;
-                        msg.obj = todayWeather;
-                        mHandler.sendMessage(msg);
+                            Message msg = new Message();
+                            msg.what = UPDATE_TODAY_WEATHER;
+                            msg.obj = todayWeather;
+                            mHandler.sendMessage(msg);
 
+                        }
                     }
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
@@ -432,6 +436,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+    /**
+     * 定位监听器，处理定位后信息
+     */
     private class MyLocationListener extends BDAbstractLocationListener  {
         @Override
         public void onReceiveLocation(BDLocation bdLocation) {
