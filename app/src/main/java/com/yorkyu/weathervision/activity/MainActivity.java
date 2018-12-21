@@ -13,8 +13,15 @@ import android.view.animation.RotateAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.baidu.location.BDAbstractLocationListener;
+import com.baidu.location.BDLocation;
+import com.baidu.location.BDLocationListener;
+import com.baidu.location.LocationClient;
+import com.baidu.location.LocationClientOption;
 
 import com.yorkyu.weathervision.R;
+import com.yorkyu.weathervision.app.MyApplication;
+import com.yorkyu.weathervision.model.City;
 import com.yorkyu.weathervision.model.TodayWeather;
 import com.yorkyu.weathervision.util.NetUtil;
 
@@ -29,30 +36,40 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final int UPDATE_TODAY_WEATHER = 1;
     private static final String TAG = "myWeather";
-    private ImageView mUpdateBtn;
+    private static final String DEFAULT_CITY_CODE = "default_city_code";
+    private ImageView mUpdateBtn, mLocationBtn, mShareBtn;
     private ImageView mCitySelect;
     private TextView cityTv, timeTv, humidityTv, weekTv, pmDataTv, pmQualityTv, temperatureTv, climateTv, windTv, city_name_Tv;
     private ImageView weatherImg, pmImg;
     private RotateAnimation rotateAnimation;
+    private LocationClient mLocationClient;
+    private List<City> mCityList;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 绑定控件
-        mUpdateBtn = findViewById(R.id.title_update_btn);
+        intiView();
+        mCityList = ((MyApplication)getApplication()).getCityList();
+        mLocationClient = new LocationClient(getApplicationContext());
+        mLocationClient.registerLocationListener(new MyLocationListener());
+        initLocation();
         // 设置监听器
         mUpdateBtn.setOnClickListener(this);
+        mLocationBtn.setOnClickListener(this);
+        mShareBtn.setOnClickListener(this);
+
         // 绑定控件
         mCitySelect = findViewById(R.id.title_city_manager);
         // 设置监听器
         mCitySelect.setOnClickListener(this);
-        intiView();
 
         // 设置一个放置动画用于刷新按钮
         rotateAnimation = new RotateAnimation(
@@ -63,6 +80,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         rotateAnimation.setDuration(500);
         rotateAnimation.setRepeatCount(Animation.INFINITE);
 
+    }
+    private void initLocation() {
+        LocationClientOption option = new LocationClientOption();
+        //就是这个方法设置为 true，才能获取当前的位置信息
+        option.setIsNeedAddress(true);
+        option.setOpenGps(true);
+
+        option.setLocationMode(LocationClientOption.LocationMode.Hight_Accuracy
+        );//可选，默认高精度，设置定位模式，高精度，低功耗，仅设备
+        option.setCoorType("gcj02");//可选，默认 gcj02，设置返回的定位结果坐标系
+        //int span = 1000;
+        //option.setScanSpan(span);//可选，默认 0，即仅定位一次，设置发起定位请求的间隔需要大于等于 1000ms 才是有效的
+        mLocationClient.setLocOption(option);
     }
 
     /**
@@ -79,6 +109,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         temperatureTv = findViewById(R.id.temperature);
         climateTv = findViewById(R.id.climate);
         windTv = findViewById(R.id.wind);
+
+        mLocationBtn = findViewById(R.id.title_location);
+        mShareBtn = findViewById(R.id.title_share);
+        mUpdateBtn = findViewById(R.id.title_update_btn);
+
         weatherImg = findViewById(R.id.weather_img);
         pmImg = findViewById(R.id.pm2_5_img);
 
@@ -123,7 +158,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (v.getId() == R.id.title_update_btn) {
             // 通过 SharedPreferences 存储 city code
             SharedPreferences sharedPreferences = getSharedPreferences("config", MODE_PRIVATE);
-            String cityCode = sharedPreferences.getString("main_city_code", "101010100");
+            String cityCode = sharedPreferences.getString(DEFAULT_CITY_CODE, "101010100");
             Log.d("myWeahter city code", cityCode);
 
 
@@ -138,6 +173,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Log.d("myWeather", "网络挂了");
                 Toast.makeText(MainActivity.this, "网络挂了!", Toast.LENGTH_LONG).show();
             }
+        }
+        if (v.getId() == R.id.title_location) {
+            // 检测网络连接
+            if (NetUtil.getNetworkState(this) != NetUtil.NETWORN_NONE) {
+                Log.d("myWeather", "网络OK");
+
+                mLocationBtn.setClickable(false);
+                mLocationBtn.startAnimation(rotateAnimation);
+                mLocationClient.start();
+            } else {
+                Log.d("myWeather", "网络挂了");
+                Toast.makeText(MainActivity.this, "网络挂了!", Toast.LENGTH_LONG).show();
+            }
+
         }
     }
 
@@ -207,7 +256,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     if (con != null) {
                         con.disconnect();
                     }
-                    mUpdateBtn.clearAnimation();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            // 清除动画及使用更新按钮可点击
+                            mUpdateBtn.clearAnimation();
+                            mUpdateBtn.setClickable(true);
+                        }
+                    });
+
                 }
             }
         }).start();
@@ -375,4 +432,30 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+    private class MyLocationListener extends BDAbstractLocationListener  {
+        @Override
+        public void onReceiveLocation(BDLocation bdLocation) {
+            String city = bdLocation.getCity();
+            String province = bdLocation.getProvince();
+            city = city.substring(0, city.length() - 1);
+            SharedPreferences sharedPreferences = getSharedPreferences("config", MODE_PRIVATE);
+
+            String cityCode = null;
+            for (City c : mCityList) {
+                if (c.getCity().equals(city)) {
+                    cityCode = c.getNumber();
+                    Log.d("Location: ", city + "  " + province + "  " + cityCode);
+                    break;
+                }
+            }
+
+            sharedPreferences.edit().putString(DEFAULT_CITY_CODE, cityCode).apply();    // 存储当前默认 citycode
+
+            mUpdateBtn.setClickable(false); // 后面即将进行更新天气数据，因此使更新操作按钮不可用
+            queryWeatherCode(cityCode);     // 依据 citycode 查询天气
+            mLocationBtn.clearAnimation();
+            mLocationClient.stop();         // 停止定位旋转动画
+            mLocationBtn.setClickable(true);
+        }
+    }
 }
