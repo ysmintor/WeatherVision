@@ -6,6 +6,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
@@ -22,9 +25,14 @@ import com.baidu.location.LocationClientOption;
 import com.yorkyu.weathervision.R;
 import com.yorkyu.weathervision.app.MyApplication;
 import com.yorkyu.weathervision.model.City;
+import com.yorkyu.weathervision.model.ForecastWeather;
 import com.yorkyu.weathervision.model.TodayWeather;
 import com.yorkyu.weathervision.util.NetUtil;
 
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.DocumentHelper;
+import org.dom4j.Element;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
@@ -36,6 +44,8 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -50,7 +60,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private RotateAnimation rotateAnimation;
     private LocationClient mLocationClient;
     private List<City> mCityList;
-
+    private RecyclerView mWeekRecyclerView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -128,6 +138,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         temperatureTv.setText("N/A");
         climateTv.setText("N/A");
         windTv.setText("N/A");
+
+
+        // 初始化六周天气情况负责的recycler view
+        mWeekRecyclerView = findViewById(R.id.day_week_weather);
+        mWeekRecyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        mWeekRecyclerView.setItemAnimator(new DefaultItemAnimator());
 
     }
 
@@ -242,7 +258,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     String responseStr = response.toString();
 //                    Log.d(TAG, responseStr);
                     if (!responseStr.contains("<error>")) {                 // 处理没有对应的city code 返回结果的情形
-                        todayWeather = parseXML(responseStr);               // 从获取的数据中解析需要的内容到 TodayWeather 实体中
+                        todayWeather = dom4jPaeseXML(responseStr);               // 从获取的数据中解析需要的内容到 TodayWeather 实体中
                         if (todayWeather != null) {                         // 获取的数据不为空，则将解析后的数据发送到主线程进行显示
                             Log.d(TAG, todayWeather.toString());
 
@@ -272,6 +288,48 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         }).start();
+    }
+
+    private TodayWeather dom4jPaeseXML(String xml) throws DocumentException {
+        Boolean today = false;
+        List<ForecastWeather> dayOfWeekForecastWeather = new ArrayList<>();
+        TodayWeather info = new TodayWeather();
+        Document document = DocumentHelper.parseText(xml);
+
+        Element root = document.getRootElement();
+        Element node = root.element("city");
+        info.setCity(node.getText());
+        info.setUpdatetime(root.element("updatetime").getText());
+        info.setWendu(root.elementText("wendu"));
+        info.setFengli(root.elementText("fengli"));
+        info.setShidu(root.elementText("shidu"));
+        info.setFengxiang(root.elementText("fengxiang"));
+        node = root.element("environment");
+        if (node != null) {
+            info.setPm25(node.elementText("pm25"));
+            info.setQuality(node.elementText("quality"));
+        }
+        node = root.element("forecast");
+        for (Iterator<Element> it = node.elementIterator("weather"); it.hasNext(); ) {
+            Element weather = it.next();
+            if (!today) {
+                today = true;
+                info.setDate(weather.elementText("date"));
+                info.setHigh(weather.elementText("high"));
+                info.setLow(weather.elementText("low"));
+                info.setType(weather.element("day").elementText("type"));
+            } else {
+                ForecastWeather eachDayForecastWeather = new ForecastWeather();
+                eachDayForecastWeather.setDate(weather.elementText("date"));
+                eachDayForecastWeather.setHigh(weather.elementText("high"));
+                eachDayForecastWeather.setLow(weather.elementText("low"));
+                eachDayForecastWeather.setType(weather.element("day").elementText("type"));
+                eachDayForecastWeather.setFengxiang(weather.element("day").elementText("fengxiang"));
+                dayOfWeekForecastWeather.add(eachDayForecastWeather);
+            }
+        }
+        info.setDayOfWeekForcastWeather(dayOfWeekForecastWeather);
+        return info;
     }
 
     private TodayWeather parseXML(String xmldata) {

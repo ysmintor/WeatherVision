@@ -1,5 +1,7 @@
 package com.yorkyu.weathervision.model;
 
+import java.util.List;
+
 public class TodayWeather {
     private String city;
     private String updatetime;
@@ -13,6 +15,16 @@ public class TodayWeather {
     private String high;
     private String low;
     private String type;
+    private List<ForecastWeather> dayOfWeekForecastWeather;
+
+    public void setDayOfWeekForcastWeather(List<ForecastWeather> dayOfWeekForecastWeather) {
+        this.dayOfWeekForecastWeather = dayOfWeekForecastWeather;
+    }
+
+    public List<ForecastWeather> getDayOfWeekForecastWeather() {
+
+        return dayOfWeekForecastWeather;
+    }
 
     public String getCity() {
         return city;
