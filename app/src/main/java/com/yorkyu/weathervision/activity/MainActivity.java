@@ -28,6 +28,7 @@ import com.yorkyu.weathervision.model.City;
 import com.yorkyu.weathervision.model.ForecastWeather;
 import com.yorkyu.weathervision.model.TodayWeather;
 import com.yorkyu.weathervision.util.NetUtil;
+import com.yorkyu.weathervision.util.SharedPreferencesUtils;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -90,6 +91,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         rotateAnimation.setDuration(500);
         rotateAnimation.setRepeatCount(Animation.INFINITE);
 
+        checkConnectivity();
+
+    }
+
+    /**
+     * 检查网络连通性
+     */
+    private void checkConnectivity() {
+        if (NetUtil.getNetworkState(this) != NetUtil.NETWORN_NONE) {
+            Log.d(TAG, "网络ok！");
+            Toast.makeText(MainActivity.this, "网络ok!", Toast.LENGTH_SHORT).show();
+        } else {
+            Log.d(TAG, "网络挂了！");
+            Toast.makeText(MainActivity.this, "网络未连接", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void initLocation() {
@@ -174,8 +190,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         if (v.getId() == R.id.title_update_btn) {
             // 通过 SharedPreferences 存储 city code
-            SharedPreferences sharedPreferences = getSharedPreferences("config", MODE_PRIVATE);
-            String cityCode = sharedPreferences.getString(DEFAULT_CITY_CODE, "101010100");
+//            SharedPreferences sharedPreferences = getSharedPreferences("config", MODE_PRIVATE);
+//            String cityCode = sharedPreferences.getString(DEFAULT_CITY_CODE, "101010100");
+            String cityCode = SharedPreferencesUtils.init(this).getString(DEFAULT_CITY_CODE, "101010100");
             Log.d("myWeahter city code", cityCode);
 
 
@@ -220,6 +237,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             if (NetUtil.getNetworkState(this) != NetUtil.NETWORN_NONE) {
                 Log.d("myWeather", "网络OK");
+                SharedPreferencesUtils.init(this).putString(DEFAULT_CITY_CODE, newCityCode);
                 queryWeatherCode(newCityCode);
             } else {
                 Log.d("myWeather", "网络挂了");
@@ -491,7 +509,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             weatherImg.setImageResource(R.drawable.biz_plugin_weather_zhongyu);
         }
         Toast.makeText(MainActivity.this, "更新成功!", Toast.LENGTH_LONG).show();
-
     }
 
     /**
@@ -503,7 +520,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             String city = bdLocation.getCity();
             String province = bdLocation.getProvince();
             city = city.substring(0, city.length() - 1);
-            SharedPreferences sharedPreferences = getSharedPreferences("config", MODE_PRIVATE);
+//            SharedPreferences sharedPreferences = getSharedPreferences("config", MODE_PRIVATE);
+
 
             String cityCode = null;
             for (City c : mCityList) {
@@ -514,8 +532,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
 
-            sharedPreferences.edit().putString(DEFAULT_CITY_CODE, cityCode).apply();    // 存储当前默认 citycode
+//            sharedPreferences.edit().putString(DEFAULT_CITY_CODE, cityCode).apply();    // 存储当前默认 citycode
 
+            SharedPreferencesUtils.init(MainActivity.this).putString(DEFAULT_CITY_CODE, cityCode);
             mUpdateBtn.setClickable(false); // 后面即将进行更新天气数据，因此使更新操作按钮不可用
             queryWeatherCode(cityCode);     // 依据 citycode 查询天气
             mLocationBtn.clearAnimation();
